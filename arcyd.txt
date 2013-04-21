@@ -1,0 +1,147 @@
+h1. Arcyd Quickstart
+
+{section}
+{column:width=600px}
+
+Arcyd removes the need for using the 'arc' command-line tool to interact with Phabricator, it's currently in beta testing.  To sign up to join beta-testing, please MSG ANGELOS EVRIPIOTIS.
+
+{toc:outline=true|indent=0px|minLevel=2}
+
+h2. Project Objectives
+
+* Remove the need for setting up, configuring and learning 'Arcanist'
+* Automate landing of changes when they pass review
+* Configure linters for everyone in one place
+* Provide an open (on GitHub) solution for integrating with Phabricator that we can extend (in Python)
+
+h2. Basic Workflow
+
+Here is an example of what a typical workflow might look like:
+
+{code}
+$ git checkout feature/mywork
+~ do your work ~
+~ commit (use Phabricator message format, see below) ~
+$ git push origin feature/mywork:ph-review/mywork/master
+
+.. daemon creates review ..
+.. reviewer asks for changes ..
+
+$ git checkout ph-review/mywork/master
+~ make requested changes ~
+$ git push origin ph-review/mywork/master
+
+.. reviewer accepts revision ..
+.. daemon automatically lands revision (squash) ..
+.. daemon removes ph-review/mywork/master ..
+{code}
+
+h2. Branch naming
+
+Arcyd relies on a special branch naming convention in order to discover which branches to create reviews from and where they should land.
+
+e.g. *ph-review/description/base/branch*
+
+||ph-review||/||description||/||base/branch||
+|Always starts with ph-review.| |You get one 'section' to describe your change.
+Please use '_' or '-' or camelCase to join multiple words.| |The branch we'll diff against and land onto if the review is accepted.
+Note that this can be many 'sections', e.g. 'release / 2013_Apr'|
+
+h2. Commit messages
+
+In order to fill out the review page correctly, Arcyd expects your commit messages to be in the same format that Arcanist uses.
+(Arcyd sends the commit messages to Phabricator to parse and receives the fields back)
+
+There are a number of 'fields' that Arcyd will recognize in the commit messages:
+
+||field||mandatory?||
+|title|*mandatory*|
+|summary|optional|
+|test plan|*mandatory*|
+|reviewers|optional|
+|maniphest tasks|optional|
+
+The 'title' field of the message is automatically taken from the first line of a commit.
+The 'summary' field of the message is automatically taken from the 'body' of the commit.
+
+e.g.
+{code}
+This is the title
+
+This is the summary / body, note that the second line is always blank.
+
+This is also taken as part of the summary as it is considered as part of the 'body' of
+the message.
+
+Test Plan: this can be all on one line if you want
+Reviewers: one-or-many-unix-names separated-by-spaces 
+{code}
+
+{tip}
+Please see Tim Pope's '[A note about git commit messages|http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html]' for some background on the 'subject / body' distinction.
+{tip}
+
+{note}
+Reviewers must be already registered in your Phabricator instance.
+To register, they simply need to log in with their unix credentials.
+{note}
+
+The commit messages on a branch are all combined to determine the fields to create a review, please see the '[Addendum: Combining Commit Messages|#Phabricator.Doc.Arcyd.QuickStart-Addendum%3ACombiningCommitMessages]' section below for more detail.
+
+h2. Addendum: What's with the name?
+
+'Arcyd' breaks down like this:
+
+||Arc||y||d||
+|After 'Arcanist'|It's basically Arcanist but in pYthon|It's a daemon (almost)|
+
+You can pronounce it like 'orchid' but starting with an 'a' - 'archid'.
+
+This a similar utterance to a Manc or [Mancunian|http://en.wikipedia.org/wiki/Mancunian] person referring to their sibling or perhaps friend - "our kid".  Learn more about this fascinating language [here|http://www.redcafe.net/wiki/Manchester_The_Language]. (beware: uses swear words)
+
+h2. Addendum: Combining Commit Messages
+The commit messages on a branch are all combined to determine the fields to create a review, e.g. if you had two commits on a branch:
+
+commit 1
+{code}
+this title of the first commit is the title of the review
+
+Summary of commit 1.
+
+Test Plan:
+How I tested commit 1.
+
+Reviewers: 
+person1
+{code}
+
+commit 2
+{code}
+Commit to fix typo (title won't appear in the review)
+{code}
+
+commit 3
+{code}
+More substantial commit (title won't appear in the review)
+
+Summary of commit 3.
+
+Test Plan: How I tested commit 3.
+Reviewers: person2
+{code}
+
+These will be combined like so:
+||field||value||
+|Title|this title of the first commit is the title of the review|
+|Summary|Summary of commit 1.
+.
+Summary of commit 3.|
+|Test Plan|How I tested commit 1.
+.
+How I tested commit 3.|
+|Reviewers|person1 person2|
+
+{column}
+{column}
+{column}
+{section}
